@@ -5,15 +5,22 @@ add_flag="-a"
 remove_flag="-rm"
 remove_all_flag="-d"
 show_flag="-s"
+undo_flag="-u"
 help_flag="-h"
 directory=~/.tasks
 file="$directory/storage.txt"
+backup_file="$directory/backup.txt"
 temp_file="$directory/storage-temp.txt"
 
 green='\033[0;32m'
 reset_color='\e[0m'
 
+storeBackup() {
+  cp "$file" "$backup_file"
+}
+
 addTask() {
+  storeBackup
   local current_date_time=$(date +"%d.%m.%Y %H:%M")
   local task=$1
   local task_log="$1   |   $current_date_time"
@@ -27,6 +34,7 @@ addTask() {
 }
 
 removeTask() {
+  storeBackup
   local task="$1"
   if [ -z "$task" ]; then
     echo "Missing row number. Type $help_flag for help."
@@ -46,6 +54,7 @@ removeTask() {
 }
 
 removeAllTasks() {
+  storeBackup
   read -p "Are you sure you want to remove all tasks [Y/n]" -r answer
   if [[ "$answer" == [Yy] ]]; then
     truncate -s 0 $file
@@ -62,12 +71,17 @@ showTasks() {
   done
 }
 
+undo() {
+  cp "$backup_file" "$file"
+}
+
 help() {
   echo """
   Usage:
-      -a {task}         Add task to list.
-      -rm {row_number}  Remove task from list.
+      -a <task>         Add task to list.
+      -rm <row_number>  Remove task from list.
       -d                Remove all tasks.
+      -u                Undo added/removed tasks.
       -s                Show all tasks.
   """
 }
@@ -91,6 +105,8 @@ elif [ "$flag" == "$remove_all_flag" ]; then
   removeAllTasks
 elif [ "$flag" == "$show_flag" ]; then
   showTasks
+elif [ "$flag" == "$undo_flag" ]; then
+  undo
 elif [ "$flag" == "$help_flag" ]; then
   help
 else
