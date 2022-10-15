@@ -9,6 +9,13 @@ cd Bash-Tasks
 bash installer.sh
 ```
 
+## Uninstalling
+
+From the root of the cloned project run:
+```
+bash uninstaller.sh
+```
+
 ## Usage
 
 ```
