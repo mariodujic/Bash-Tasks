@@ -6,11 +6,15 @@ remove_flag="-rm"
 remove_all_flag="-d"
 show_flag="-s"
 undo_flag="-u"
+push_flag="push"
+pull_flag="pull"
 help_flag="-h"
 directory=~/.tasks
 file="$directory/storage.txt"
 backup_file="$directory/backup.txt"
 temp_file="$directory/storage-temp.txt"
+remote_storage_url="asddpdaw2.pythonanywhere.com"
+#remote_storage_url="localhost:5000"
 
 green='\033[0;32m'
 reset_color='\e[0m'
@@ -75,6 +79,48 @@ undo() {
   cp "$backup_file" "$file"
 }
 
+pushRemote() {
+  id="$1"
+  if [ -z "$id" ]; then
+    echo "Missing push ID. Type $help_flag for help."
+    exit 1
+  fi
+  tasks=$(cat ${file})
+  json=$(jq -n --arg bn "$tasks" '{tasks: $bn}')
+  url="$remote_storage_url/push?id=${id}"
+  status_code=$(curl --write-out "%{http_code}" --silent --output /dev/null -XPOST "$url" -H "Content-Type: application/json" -d "$json")
+  if [[ "$status_code" == 200 ]]; then
+    echo "Successfully pushed tasks to a remote server."
+  else
+    echo "Error pushing tasks to a a remote server."
+  fi
+}
+
+pullRemote() {
+  id="$1"
+  if [ -z "$id" ]; then
+    echo "Missing pull ID. Type $help_flag for help."
+    exit 1
+  fi
+  url="$remote_storage_url/pull?id=${id}"
+  response=$(curl -s -w "%{http_code}" -XGET "$url" -H "Content-Type: application/json")
+  status_code=$(tail -n1 <<<"$response")
+  if [[ "$status_code" == 200 ]]; then
+    echo "Successfully pulled tasks from a remote server."
+  else
+    echo "Error pulling tasks from a remote server."
+  fi
+  tasks=$(sed '$d' <<<"$response" | jq -r '.tasks')
+  printf "\nPulled tasks:\n\n"
+  echo "$tasks"
+  printf "\n"
+  read -p "Would you like to store these tasks locally [Y/n] " -r answer
+    if [[ "$answer" == [Yy] ]]; then
+      cat <<< "$tasks" > "$file"
+      echo "Tasks stored."
+    fi
+}
+
 help() {
   echo """
   Usage:
@@ -82,6 +128,8 @@ help() {
       -rm <row_number>  Remove task from list.
       -d                Remove all tasks.
       -u                Undo added/removed tasks.
+      push <unique id>  Push tasks to a remote server with unique ID.
+      pull <unique id>  Pull tasks from a remote server by unique ID.
       -s                Show all tasks.
   """
 }
@@ -107,6 +155,10 @@ elif [ "$flag" == "$show_flag" ]; then
   showTasks
 elif [ "$flag" == "$undo_flag" ]; then
   undo
+elif [ "$flag" == "$push_flag" ]; then
+  pushRemote "${2}"
+elif [ "$flag" == "$pull_flag" ]; then
+  pullRemote "${2}"
 elif [ "$flag" == "$help_flag" ]; then
   help
 else
