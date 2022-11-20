@@ -23,8 +23,8 @@ bash uninstaller.sh
 ## Usage
 
 ```
-tasks -a {task}         Add task to list.
-      -rm {row_number}  Remove task from list.
+tasks -a <task>         Add task to list.
+      -rm <row_number>  Remove task from list.
       -d                Remove all tasks.
       -s                Show all tasks.
       -u                Undo added/removed tasks.
